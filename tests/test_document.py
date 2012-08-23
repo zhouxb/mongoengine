@@ -3348,7 +3348,7 @@ class ValidatorErrorTest(unittest.TestCase):
             t.save()
         except ValidationError, e:
             expected_error_message = ("ValidationError(__all__.Value of "
-                                      "z != x + y: ['doc'])"
+                                      "z != x + y: ['doc'])")
             self.assertEquals(e.message, expected_error_message)
             self.assertEquals(e.to_dict(), {
                     'doc': {'__all__': 'Value of z != x + y'}})
