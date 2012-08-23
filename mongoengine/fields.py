@@ -450,7 +450,7 @@ class EmbeddedDocumentField(BaseField):
             return value
         return self.document_type.to_mongo(value)
 
-    def validate(self, value):
+    def validate(self, value, clean=True):
         """Make sure that the document instance is an instance of the
         EmbeddedDocument subclass provided when the document was defined.
         """
@@ -458,7 +458,8 @@ class EmbeddedDocumentField(BaseField):
         if not isinstance(value, self.document_type):
             self.error('Invalid embedded document instance provided to an '
                        'EmbeddedDocumentField')
-        self.document_type.validate(value)
+
+        self.document_type.validate(value, clean=clean)
 
     def lookup_member(self, member_name):
         return self.document_type._fields.get(member_name)
@@ -488,12 +489,12 @@ class GenericEmbeddedDocumentField(BaseField):
 
         return value
 
-    def validate(self, value):
+    def validate(self, value, clean=True):
         if not isinstance(value, EmbeddedDocument):
             self.error('Invalid embedded document instance provided to an '
                        'GenericEmbeddedDocumentField')
 
-        value.validate()
+        value.validate(clean=clean)
 
     def to_mongo(self, document):
         if document is None:
@@ -573,6 +574,7 @@ class ListField(ComplexBaseField):
         if (not isinstance(value, (list, tuple, QuerySet)) or
             isinstance(value, basestring)):
             self.error('Only lists and tuples may be used in a list field')
+
         super(ListField, self).validate(value)
 
     def prepare_query_value(self, op, value):
@@ -647,6 +649,7 @@ class DictField(ComplexBaseField):
         if any(('.' in k or '$' in k) for k in value.keys()):
             self.error('Invalid dictionary key name - keys may not contain "."'
                        ' or "$" characters')
+
         super(DictField, self).validate(value)
 
     def lookup_member(self, member_name):

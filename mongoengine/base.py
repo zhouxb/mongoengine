@@ -19,6 +19,7 @@ from bson import ObjectId
 from bson.dbref import DBRef
 
 ALLOW_INHERITANCE = True
+NON_FIELD_ERRORS = '__all__'
 
 _document_registry = {}
 _class_registry = {}
@@ -234,7 +235,7 @@ class BaseField(object):
         """
         pass
 
-    def _validate(self, value):
+    def _validate(self, value, **kwargs):
         from mongoengine import Document, EmbeddedDocument
         # check choices
         if self.choices:
@@ -261,7 +262,7 @@ class BaseField(object):
                 raise ValueError('validation argument for "%s" must be a '
                                  'callable.' % self.name)
 
-        self.validate(value)
+        self.validate(value, **kwargs)
 
 
 class ComplexBaseField(BaseField):
@@ -992,20 +993,39 @@ class BaseDocument(object):
 
         return value
 
-    def validate(self):
+    def clean(self):
+        """
+        Optional clean method hook to do document wide cleaning.
+        """
+        pass
+
+    def validate(self, clean=True):
         """Ensure that all fields' values are valid and that required fields
         are present.
         """
+
+        # Ensure that each field is matched to a valid value
+        errors = {}
+
+        if clean:
+            try:
+                self.clean()
+            except ValidationError, error:
+                errors[NON_FIELD_ERRORS] = error
+
         # Get a list of tuples of field names and their current values
         fields = [(field, getattr(self, name))
                   for name, field in self._fields.items()]
 
-        # Ensure that each field is matched to a valid value
-        errors = {}
         for field, value in fields:
             if value is not None:
                 try:
-                    field._validate(value)
+                    if field.__class__.__name__ in (
+                        'EmbeddedDocumentField', 'GenericEmbeddedDocumentField'):
+                        field._validate(value, clean=clean)
+                    else:
+                        field._validate(value)
+
                 except ValidationError, error:
                     errors[field.name] = error.errors or error
                 except (ValueError, AttributeError, AssertionError), error:
@@ -1013,6 +1033,7 @@ class BaseDocument(object):
             elif field.required:
                 errors[field.name] = ValidationError('Field is required',
                                                      field_name=field.name)
+
         if errors:
             raise ValidationError('ValidationError', errors=errors)
 

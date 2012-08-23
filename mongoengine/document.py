@@ -155,7 +155,7 @@ class Document(BaseDocument):
 
     def save(self, safe=True, force_insert=False, validate=True,
              write_options=None,  cascade=None, cascade_kwargs=None,
-             _refs=None):
+             clean=True, _refs=None):
         """Save the :class:`~mongoengine.Document` to the database. If the
         document already exists, it will be updated, otherwise it will be
         created.
@@ -179,6 +179,7 @@ class Document(BaseDocument):
             default by setting "cascade" in the document __meta__
         :param cascade_kwargs: optional kwargs dictionary to be passed throw
             to cascading saves
+        :param clean: call the document clean method before saving
         :param _refs: A list of processed references used in cascading saves
 
         .. versionchanged:: 0.5
@@ -192,11 +193,13 @@ class Document(BaseDocument):
             meta['cascade'] = False  Also you can pass different kwargs to
             the cascade save using cascade_kwargs which overwrites the
             existing kwargs with custom values
+        .. versionchanged:: 0.7
+            Added clean parameter to call clean on a document before validation
         """
         signals.pre_save.send(self.__class__, document=self)
 
         if validate:
-            self.validate()
+            self.validate(clean=clean)
 
         if not write_options:
             write_options = {}
