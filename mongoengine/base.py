@@ -475,7 +475,11 @@ class ObjectIdField(BaseField):
 
     def to_python(self, value):
         if not isinstance(value, ObjectId):
-            value = ObjectId(value)
+            #FIXME
+            try:
+                value = ObjectId(value)
+            except:
+                pass
         return value
 
     def to_mongo(self, value):

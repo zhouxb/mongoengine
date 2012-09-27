@@ -696,7 +696,8 @@ class QuerySet(object):
         match_operators = ['contains', 'icontains', 'startswith',
                            'istartswith', 'endswith', 'iendswith',
                            'exact', 'iexact']
-        custom_operators = ['match']
+        #FIXME
+        custom_operators = ['match', 'regex']
 
         mongo_query = {}
         merge_query = defaultdict(list)
@@ -773,6 +774,10 @@ class QuerySet(object):
                 elif op in custom_operators:
                     if op == 'match':
                         value = {"$elemMatch": value}
+
+                    #FIXME
+                    elif op == 'regex':
+                        value = value = re.compile(value) if negate else {"$regex": value}
                     else:
                         NotImplementedError("Custom method '%s' has not "
                                             "been implemented" % op)
